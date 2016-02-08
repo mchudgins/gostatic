@@ -30,14 +30,22 @@ type RuleMap map[string]*Rule
 
 // SiteConfig contains the data for a complete parsed site configuration file.
 type SiteConfig struct {
+	SiteInfo
 	Templates []string
-	Base      string
 	Source    string
 	Output    string
 	Rules     RuleMap
+}
+
+// SiteInfo is useful to template funcs
+type SiteInfo struct {
+	Base      string
 	Other     map[string]string
 	changedAt time.Time
 }
+
+// CurrentSite being generated/watched
+var CurrentSite *SiteInfo
 
 // NewSiteConfig parses the given `path' file to a *SiteConfig. Will return a nil
 // pointer plus the non-nil error if the parsing has failed.
@@ -54,10 +62,11 @@ func NewSiteConfig(path string) (*SiteConfig, error) {
 
 	basepath, _ := filepath.Split(path)
 	cfg := &SiteConfig{
-		Rules:     make(RuleMap),
-		Other:     make(map[string]string),
-		Base:      basepath,
-		changedAt: stat.ModTime(),
+		Rules: make(RuleMap),
+		SiteInfo: SiteInfo{
+			Other:     make(map[string]string),
+			Base:      basepath,
+			changedAt: stat.ModTime()},
 	}
 
 	indent := 0
@@ -168,7 +177,11 @@ func (cfg *SiteConfig) ParseVariable(base string, line string) {
 	case "OUTPUT":
 		cfg.Output = filepath.Join(base, value)
 	default:
-		cfg.Other[Capitalize(name)] = value
+		if v, fExists := cfg.Other[Capitalize(name)]; fExists {
+			cfg.Other[Capitalize(name)] = v + "," + value
+		} else {
+			cfg.Other[Capitalize(name)] = value
+		}
 	}
 }
 

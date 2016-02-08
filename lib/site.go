@@ -47,6 +47,8 @@ func NewSite(config *SiteConfig, procs ProcessorMap) *Site {
 		Processors: procs,
 	}
 
+	CurrentSite = &site.SiteInfo
+
 	site.Collect()
 	site.FindDeps()
 

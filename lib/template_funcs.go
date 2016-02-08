@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/adler32"
 	"io"
+	"net/url"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -144,14 +145,104 @@ func Excerpt(text string, maxWords int) string {
 	return strings.Join(splitup[0:maxWords], " ") + " [...]"
 }
 
+// Chomp removes leading/trailing spaces
+func Chomp(value string) string {
+	return strings.Trim(value, " \t")
+}
+
+var staticResourceMap map[string]string
+
+func mapStaticResource(resource string) string {
+	const (
+		defaultCSSPath string = "/css"
+		defaultCSS     string = "Css_path"
+		defaultJSPath  string = "/js"
+		defaultJS      string = "Js_path"
+		defaultIMGPath string = "/img"
+		defaultIMG     string = "Img_path"
+	)
+	s := strings.ToLower(resource)
+
+	// see if this resource should be remapped
+	if result, fPresent := staticResourceMap[s]; fPresent {
+		return result
+	} else if strings.HasPrefix(s, "/") { // else, see if this is root relative
+
+		if strings.HasSuffix(s, ".css") {
+			if cssPath, fPresent := CurrentSite.Other[defaultCSS]; fPresent {
+				return cssPath + resource
+			}
+			return defaultCSSPath + resource
+		}
+
+		if strings.HasSuffix(s, ".png") ||
+			strings.HasSuffix(s, ".jpg") ||
+			strings.HasSuffix(s, ".jpeg") ||
+			strings.HasSuffix(s, ".gif") ||
+			strings.HasSuffix(s, ".ico") ||
+			strings.HasSuffix(s, ".webp") {
+			if imgPath, fPresent := CurrentSite.Other[defaultIMG]; fPresent {
+				return imgPath + resource
+			}
+			return defaultIMGPath + resource
+		}
+
+		if strings.HasSuffix(s, ".js") {
+			if jsPath, fPresent := CurrentSite.Other[defaultJS]; fPresent {
+				return jsPath + resource
+			}
+			return defaultJSPath + resource
+		}
+	}
+
+	return resource
+}
+
+// StaticURL remaps to allow deployment time decisions about content locations & URL paths
+func StaticURL(value string) string {
+	if len(staticResourceMap) == 0 {
+		if value, fPresent := CurrentSite.Other["Resource_map"]; fPresent {
+			groups := strings.Split(value, ",")
+			for _, g := range groups {
+				pair := strings.Split(g, ":")
+				if len(pair) != 2 {
+					continue
+				}
+				k := strings.Trim(pair[0], " ")
+				v := strings.Trim(pair[1], " ")
+				staticResourceMap[k] = v
+			}
+		}
+	}
+
+	u, err := url.Parse(value)
+	if err != nil {
+		errhandle(err)
+		return value
+	}
+
+	// if its not absolute, then we'll process it
+	if !u.IsAbs() {
+		return mapStaticResource(value)
+	}
+
+	return u.String()
+}
+
+func init() {
+	staticResourceMap = make(map[string]string)
+}
+
 // TemplateFuncMap contains the mapping of function names and their corresponding
 // Go functions, to be used within templates.
 var TemplateFuncMap = template.FuncMap{
 	"changed":        HasChanged,
+	"chomp":          Chomp,
 	"cut":            Cut,
 	"hash":           Hash,
 	"version":        Versionize,
 	"truncate":       Truncate,
+	"staticURL":      StaticURL,
 	"strip_html":     StripHTML,
 	"strip_newlines": StripNewlines,
 	"replace":        Replace,
