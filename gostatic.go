@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 
 	flags "github.com/jessevdk/go-flags"
-	gostatic "github.com/piranha/gostatic/lib"
-	"github.com/piranha/gostatic/processors"
+	gostatic "github.com/mchudgins/gostatic/lib"
+	"github.com/mchudgins/gostatic/processors"
 )
 
 const (

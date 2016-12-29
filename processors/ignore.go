@@ -1,7 +1,7 @@
 package processors
 
 import (
-	gostatic "github.com/piranha/gostatic/lib"
+	gostatic "github.com/mchudgins/gostatic/lib"
 )
 
 type IgnoreProcessor struct {

@@ -3,7 +3,7 @@ package processors
 import (
 	"errors"
 	"fmt"
-	gostatic "github.com/piranha/gostatic/lib"
+	gostatic "github.com/mchudgins/gostatic/lib"
 	"strings"
 	"time"
 )
