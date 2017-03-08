@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	flags "github.com/jessevdk/go-flags"
+	"github.com/mchudgins/gostatic/extendedProcessors"
 	gostatic "github.com/mchudgins/gostatic/lib"
 	"github.com/mchudgins/gostatic/processors"
 )
@@ -45,6 +46,23 @@ type Opts struct {
 }
 
 var opts Opts
+
+var ExtendedProcessors = gostatic.ProcessorMap{
+	"template":               processors.NewTemplateProcessor(),
+	"inner-template":         processors.NewInnerTemplateProcessor(),
+	"config":                 processors.NewConfigProcessor(),
+	"markdown":               processors.NewMarkdownProcessor(),
+	"ext":                    processors.NewExtProcessor(),
+	"directorify":            processors.NewDirectorifyProcessor(),
+	"tags":                   processors.NewTagsProcessor(),
+	"paginate":               processors.NewPaginateProcessor(),
+	"paginate-collect-pages": processors.NewPaginateCollectPagesProcessor(),
+	"relativize":             processors.NewRelativizeProcessor(),
+	"rename":                 processors.NewRenameProcessor(),
+	"external":               processors.NewExternalProcessor(),
+	"ignore":                 processors.NewIgnoreProcessor(),
+	"minify":                 extendedProcessors.NewMinifyProcessor(),
+}
 
 func main() {
 	argparser := flags.NewParser(&opts,
@@ -86,7 +104,7 @@ func main() {
 	}
 
 	if opts.ShowProcessors {
-		processors.DefaultProcessors.ProcessorSummary()
+		ExtendedProcessors.ProcessorSummary()
 		return
 	}
 
@@ -102,7 +120,7 @@ func main() {
 		os.Exit(ExitCodeInvalidConfig)
 	}
 
-	site := gostatic.NewSite(config, processors.DefaultProcessors)
+	site := gostatic.NewSite(config, ExtendedProcessors)
 
 	if opts.Force {
 		site.ForceRefresh = true
